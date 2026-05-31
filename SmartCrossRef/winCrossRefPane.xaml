@@ -1,0 +1,183 @@
+﻿<UserControl x:Class="SmartCrossRef.winCrossRefPane"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="1024" d:DesignWidth="320">
+
+    <UserControl.Resources>
+        <Style TargetType="GroupBox">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style TargetType="ListBox">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="10"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style TargetType="RadioButton">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="2,3"/>
+        </Style>
+
+        <Style x:Key="ThemeAwareButtonStyle" TargetType="Button">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Name="RootLayoutGrid" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" Name="HeaderRowDefinition" />
+            <RowDefinition x:Name="ContentRow" Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Name="HeaderBorder" Padding="4,6" BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Stretch">
+            <Grid Name="HeaderGrid" VerticalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Name="HeaderTitle" 
+                           Text="Smart Cross-Reference" 
+                           FontWeight="Bold" 
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+                
+                <Button Grid.Column="1" 
+                        Name="btnAbout"
+                        Style="{StaticResource ThemeAwareButtonStyle}"
+                        FontSize="14"
+                        Foreground="Blue"
+                        Content="🛈" 
+                        Click="BtnSettings_Click"
+                        Padding="6,4" 
+                        Cursor="Hand"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Center"
+                        Margin="5,0,5,0"
+                        MinWidth="24"
+                        MinHeight="24"/>
+                <Button Grid.Column="2" 
+                    Name="btnSettings"
+                    Style="{StaticResource ThemeAwareButtonStyle}"
+                    Content="⚙" 
+                    Click="BtnSettings_Click"
+                    Padding="6,4" 
+                    Cursor="Hand"
+                    VerticalAlignment="Stretch"
+                    HorizontalAlignment="Center"
+                    Margin="5,0,5,0"
+                    MinWidth="24"
+                    MinHeight="24"/>
+                <Button Grid.Column="3" 
+                        Name="BtnCollapseToggle"
+                        Style="{StaticResource ThemeAwareButtonStyle}"
+                        Content="▼ Collapse Pane" 
+                        Click="BtnCollapseToggle_Click"
+                        Padding="8,4" 
+                        Cursor="Hand"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Center"
+                        MinHeight="24">
+                    <Button.LayoutTransform>
+                        <RotateTransform x:Name="ButtonRotation" Angle="0"/>
+                    </Button.LayoutTransform>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Grid x:Name="MainContentGrid" Grid.Row="1" Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="1.2*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="1.1*" />
+            </Grid.RowDefinitions>
+
+            <GroupBox Grid.Row="0" Name="SettingsGroupBox" Header="Settings" Margin="0,0,0,6">
+                <StackPanel Orientation="Vertical" Margin="6,4">
+                    <RadioButton Name="RadioInsertNumber" 
+                                 Content="Insert Number (and Label if exists)" 
+                                 GroupName="InsertionSettings" IsChecked="True"
+                                 Margin="2,4"/>
+
+                    <RadioButton Name="RadioInsertCaption" 
+                                 Content="Insert Caption Text" 
+                                 GroupName="InsertionSettings"
+                                 Margin="2,4"/>
+
+                    <RadioButton Name="RadioInsertNumberCaption" 
+                                 Content="Insert Label, Number and Caption Text" 
+                                 GroupName="InsertionSettings"
+                                 Margin="2,4"/>
+
+                    <CheckBox Name="CheckBoxInsertAsHyperlink" 
+                              Content="Insert As Hyperlink" IsChecked="True"
+                              Margin="2,10,2,2" FontFamily="Segoe UI" FontSize="11"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Grid.Row="1">
+                <Grid  Margin="0,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Name="LabelNearbyObjects" Text="Objects Found Nearby:" Margin="2,0,2,4" FontWeight="SemiBold"/>
+                    <ListBox Name="ListBoxNearbyObjects" Grid.Row="1"
+                             MouseDoubleClick="ListBoxNearby_MouseDoubleClick"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             HorizontalContentAlignment="Stretch"/>
+                </Grid>
+            </GroupBox>
+
+            <GridSplitter Grid.Row="2" Name="LayoutSplitter" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="0,4"/>
+
+            <GroupBox Header="All Objects" Grid.Row="3" Name="AllObjectsGroupBox">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <Label Name="LabelCategoryFilter" Grid.Row="0" Content="Filter by Category" Padding="0,2"/>
+                    <ListBox Name="ListBoxCategory" Grid.Row="1" Margin="0,2,0,6" Loaded="ListBoxCategory_Loaded" SelectionChanged="ListBoxCategory_SelectionChanged" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListBoxItem Content="All" IsSelected="True"/>
+                        <ListBoxItem Content="Heading"/>
+                        <ListBoxItem Content="Table"/>
+                        <ListBoxItem Content="Figure"/>
+                        <ListBoxItem Content="Equation"/>
+                        <ListBoxItem Content="Footnote"/>
+                        <ListBoxItem Content="Endnote"/>
+                        <ListBoxItem Content="Bookmark"/>
+                    </ListBox>
+
+                    <Label Name="LabelDoubleClickInstructions" Grid.Row="2" Content="Double Click to Insert Cross Reference" Padding="0,4,0,2"/>
+                    <ListBox Name="ListBoxAllObjects" Grid.Row="3" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </Grid>
+</UserControl>

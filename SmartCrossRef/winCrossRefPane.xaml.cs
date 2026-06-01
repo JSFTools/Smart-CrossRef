@@ -126,6 +126,19 @@ namespace SmartCrossRef
             }
         }
 
+        private void BtnAbout_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Instantiates and shows our newly designed dialog safely centered over Word
+                winAbout aboutWindow = new winAbout();
+                aboutWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to open About page: {ex.Message}");
+            }
+        }
         public void PopulateContextualItems(ScanScope scope)
         {
             try

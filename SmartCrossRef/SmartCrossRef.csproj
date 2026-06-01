@@ -206,6 +206,9 @@
     <Compile Include="Ribbon1.Designer.cs">
       <DependentUpon>Ribbon1.cs</DependentUpon>
     </Compile>
+    <Compile Include="winAbout.xaml.cs">
+      <DependentUpon>winAbout.xaml</DependentUpon>
+    </Compile>
     <Compile Include="winCrossRefPane.xaml.cs">
       <DependentUpon>winCrossRefPane.xaml</DependentUpon>
     </Compile>
@@ -245,6 +248,10 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="winAbout.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="winCrossRefPane.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

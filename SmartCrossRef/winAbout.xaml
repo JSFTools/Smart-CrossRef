@@ -1,0 +1,60 @@
+﻿<Window x:Class="SmartCrossRef.winAbout"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Smart Cross-Reference" 
+        Height="320" Width="400" 
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+        ShowInTaskbar="False">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Smart Cross-Reference" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+            <TextBlock Text="Version 1.0.0" FontSize="12" Foreground="Gray" Margin="0,2,0,0"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" FontSize="13" LineHeight="18" Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}">
+            An intelligent, context-aware utility designed to streamline document cross-referencing in Microsoft Word.<LineBreak/><LineBreak/>
+            Licensed under the <Run FontWeight="Bold">GNU GPL v3</Run>. Copyleft © 2026. All rights open.
+        </TextBlock>
+
+        <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Button Name="BtnCoffee" 
+                    Click="BtnCoffee_Click"
+                    Background="#FFDD00" 
+                    BorderThickness="0" 
+                    Padding="15,8" 
+                    Cursor="Hand">
+                <Button.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Resources>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="☕" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Buy Me a Coffee" FontSize="14" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <TextBlock Text="Support the development of this open-source tool!" FontSize="11" Foreground="Gray" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+        </StackPanel>
+
+        <Button Grid.Row="3" Content="Close" Width="80" HorizontalAlignment="Right" IsCancel="True" Padding="5,2"/>
+    </Grid>
+</Window>

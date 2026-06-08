@@ -67,6 +67,7 @@ namespace SmartCrossRef
                     // 1. Hide the primary lower controls workspace completely
                     MainContentGrid.Visibility = Visibility.Collapsed;
                     HeaderTitle.Visibility = Visibility.Collapsed;
+                    btnAbout.Visibility = Visibility.Collapsed;
 
                     // 2. Adjust content values & flip orientation variables
                     BtnCollapseToggle.Content = "▼ Smart CrossRef";
@@ -97,6 +98,7 @@ namespace SmartCrossRef
                     // 1. Re-reveal structural workspace objects
                     MainContentGrid.Visibility = Visibility.Visible;
                     HeaderTitle.Visibility = Visibility.Visible;
+                    btnAbout.Visibility = Visibility.Visible;
 
                     // 2. Return text vectors to zero degree alignment reading baseline
                     BtnCollapseToggle.Content = "▶ Collapse Pane";
@@ -143,6 +145,9 @@ namespace SmartCrossRef
         {
             try
             {
+                if (_isPaneCollapsed)
+                    return;
+
                 // DEFENSIVE GUARD: Ensure Word actually has a live, accessible document open
                 if (Globals.ThisAddIn.Application.Documents.Count == 0)
                 {
@@ -222,36 +227,39 @@ namespace SmartCrossRef
                 {
                     if (field.Type == Word.WdFieldType.wdFieldSequence)
                     {
-                        string fieldCode = field.Code.Text.ToUpper();
+                        string fieldCode = field?.Code?.Text?.ToUpper();
                         Word.Paragraph parentPara = field.Result.Paragraphs[1];
                         string fullCaptionText = parentPara.Range.Text.Trim('\r', '\n', ' ', '\t');
 
-                        if (fieldCode.Contains("TABLE"))
+                        if (fieldCode != null)
                         {
-                            foundItems.Add(new CrossRefTargetItem
+                            if (fieldCode.Contains("TABLE"))
                             {
-                                DisplayText = fullCaptionText,
-                                Category = "Table",
-                                WordRange = parentPara.Range
-                            });
-                        }
-                        else if (fieldCode.Contains("FIGURE"))
-                        {
-                            foundItems.Add(new CrossRefTargetItem
+                                foundItems.Add(new CrossRefTargetItem
+                                {
+                                    DisplayText = fullCaptionText,
+                                    Category = "Table",
+                                    WordRange = parentPara.Range
+                                });
+                            }
+                            else if (fieldCode.Contains("FIGURE"))
                             {
-                                DisplayText = fullCaptionText,
-                                Category = "Figure",
-                                WordRange = parentPara.Range
-                            });
-                        }
-                        else if (fieldCode.Contains("EQUATION"))
-                        {
-                            foundItems.Add(new CrossRefTargetItem
+                                foundItems.Add(new CrossRefTargetItem
+                                {
+                                    DisplayText = fullCaptionText,
+                                    Category = "Figure",
+                                    WordRange = parentPara.Range
+                                });
+                            }
+                            else if (fieldCode.Contains("EQUATION"))
                             {
-                                DisplayText = fullCaptionText,
-                                Category = "Equation",
-                                WordRange = parentPara.Range
-                            });
+                                foundItems.Add(new CrossRefTargetItem
+                                {
+                                    DisplayText = fullCaptionText,
+                                    Category = "Equation",
+                                    WordRange = parentPara.Range
+                                });
+                            }
                         }
                     }
                 }

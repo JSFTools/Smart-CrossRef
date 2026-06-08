@@ -266,10 +266,11 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>SmartCrossRef_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>
+    </ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>5CBE9229A763DA6A67718A3176FE9DDCBE1B4F5F</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>A1124E066C0DF31EE807BE3F2C54D0E043C6228E</ManifestCertificateThumbprint>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- Include additional build rules for an Office application add-in. -->

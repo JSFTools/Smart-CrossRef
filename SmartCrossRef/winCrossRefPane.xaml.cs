@@ -211,9 +211,17 @@ namespace SmartCrossRef
                         string text = para.Range.Text.Trim('\r', '\n', ' ', '\t');
                         if (!string.IsNullOrWhiteSpace(text))
                         {
+                            // 1. Extract the automated list/heading number prefix (e.g., "1.1", "Appendix A")
+                            string headingNumber = para.Range.ListFormat.ListString;
+
+                            // 2. Combine them cleanly if a number exists, otherwise fallback to just the text
+                            string fullDisplayText = !string.IsNullOrWhiteSpace(headingNumber)
+                                ? $"{headingNumber} {text}"
+                                : text;
+
                             foundItems.Add(new CrossRefTargetItem
                             {
-                                DisplayText = text,
+                                DisplayText = fullDisplayText,
                                 Category = "Heading",
                                 WordRange = para.Range
                             });

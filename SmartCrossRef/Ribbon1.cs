@@ -13,12 +13,23 @@ namespace SmartCrossRef
 
         }
 
+        // Inside your Ribbon code-behind
         private void btnTogglePane_Click(object sender, RibbonControlEventArgs e)
         {
-            bool isPressed = ((RibbonToggleButton)sender).Checked;
+            // 1. Get the pane instance for the active window only
+            var currentPane = Globals.ThisAddIn.GetTaskPaneInstance();
+            if (currentPane != null)
+            {
+                // 2. Toggle only this specific window's pane
+                currentPane.Visible = ((RibbonToggleButton)sender).Checked;
 
-            // Call the updated master synchronization method 
-            Globals.ThisAddIn.SyncAllPanesVisibility(isPressed);
+                // 3. Trigger scan if they just opened it
+                if (currentPane.Visible)
+                {
+                    var host = currentPane.Control as CrossRefPaneHostControl;
+                    host?.RefreshContextualData();
+                }
+            }
         }
     }
 }

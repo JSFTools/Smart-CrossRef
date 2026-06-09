@@ -11,7 +11,7 @@ namespace SmartCrossRef
 {
     public partial class ThisAddIn
     {
-        private Dictionary<Word.Window, CustomTaskPane> taskPaneDictionary;
+        private Dictionary<int, CustomTaskPane> taskPaneDictionary;
         private readonly object _lockObject = new object(); // Prevents multi-window thread race conditions
 
         public bool IsTaskPaneGlobalEnabled { get; set; } = true;
@@ -21,28 +21,35 @@ namespace SmartCrossRef
             try
             {
                 Word.Window activeWindow = this.Application.ActiveWindow;
-                if (activeWindow != null && taskPaneDictionary.ContainsKey(activeWindow))
+                if (activeWindow != null)
                 {
-                    return taskPaneDictionary[activeWindow];
+                    // Extract the persistent OS window handle
+                    int hwnd = activeWindow.Hwnd;
+
+                    // Look up the task pane using the integer key
+                    if (taskPaneDictionary.ContainsKey(hwnd))
+                    {
+                        return taskPaneDictionary[hwnd];
+                    }
                 }
             }
             catch
             {
-                // Fallback for transient window initialization states
+                // Fallback for transient window initialization states (e.g., when Word is shutting down)
             }
             return null;
         }
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            taskPaneDictionary = new Dictionary<Word.Window, CustomTaskPane>();
+            taskPaneDictionary = new Dictionary<int, CustomTaskPane>();
 
             // CLEANED: WindowActivate natively handles new files and opened files automatically.
             // Removing NewDocument and DocumentOpen prevents the double-creation race condition.
             this.Application.WindowActivate += Application_WindowActivate;
 
             // Replaced DocumentBeforeClose with WindowDeactivate for exact window-level death tracking
-            this.Application.WindowDeactivate += Application_WindowDeactivate;
+            this.Application.DocumentBeforeClose += Application_DocumentBeforeClose;
 
             this.Application.WindowSelectionChange += Application_WindowSelectionChange;
 
@@ -56,12 +63,16 @@ namespace SmartCrossRef
         {
             if (window == null) return null;
 
-            // Thread-safe wrapper ensures two window events cannot build a pane simultaneously
             lock (_lockObject)
             {
-                if (taskPaneDictionary.ContainsKey(window))
+                // 1. Capture the unchangeable operating system window handle
+                int hwnd = window.Hwnd;
+
+                // 2. Look up the pane using the handle. If it exists, return it instantly!
+                // This will now successfully find your collapsed pane when focus returns.
+                if (taskPaneDictionary.ContainsKey(hwnd))
                 {
-                    return taskPaneDictionary[window];
+                    return taskPaneDictionary[hwnd];
                 }
 
                 try
@@ -69,31 +80,67 @@ namespace SmartCrossRef
                     var hostControl = new CrossRefPaneHostControl();
                     CustomTaskPane newPane = this.CustomTaskPanes.Add(hostControl, "SmartCrossRef", window);
                     newPane.Width = 320;
-                    newPane.Visible = IsTaskPaneGlobalEnabled;
+
+                    // 3. This line ONLY fires the very first time the document loads up
+                    newPane.Visible = true;
 
                     hostControl.UpdateTheme();
-                    hostControl.RefreshContextualData();
 
-                    taskPaneDictionary.Add(window, newPane);
+                    if (newPane.Visible)
+                    {
+                        hostControl.RefreshContextualData();
+                    }
+
+                    // 4. Save using the window handle integer
+                    taskPaneDictionary.Add(hwnd, newPane);
                     return newPane;
                 }
                 catch (System.Runtime.InteropServices.COMException)
                 {
-                    return null; // Window is in a transient state
+                    return null;
                 }
             }
         }
 
         private void Application_WindowActivate(Word.Document Doc, Word.Window Wn)
         {
+            // 1. Fetch or create the pane for this window
             CustomTaskPane pane = GetOrCreateTaskPane(Wn);
             if (pane != null)
             {
-                pane.Visible = IsTaskPaneGlobalEnabled;
-
                 var host = pane.Control as CrossRefPaneHostControl;
-                host?.UpdateTheme();
-                host?.RefreshContextualData();
+                if (host != null)
+                {
+                    // 2. Always keep the styling up to date
+                    host.UpdateTheme();
+
+                    // 3. NATIVE RESPECT: Check Word's current pane state.
+                    // If the user collapsed it, pane.Visible will be false, so we skip the scan.
+                    // If the user left it open, pane.Visible is true, so we refresh the data.
+                    if (pane.Visible)
+                    {
+                        host.RefreshContextualData();
+                    }
+                }
+
+                // 4. Keep your Ribbon toggle button matching the true state of this window
+                UpdateRibbonButtonState(pane.Visible);
+            }
+        }
+
+        private void UpdateRibbonButtonState(bool isVisible)
+        {
+            try
+            {
+                // Replace 'Ribbon1' and 'MyToggleButton' with your actual Ribbon and Control IDs
+                if (Globals.Ribbons.Ribbon1 != null && Globals.Ribbons.Ribbon1.btnTogglePane != null)
+                {
+                    Globals.Ribbons.Ribbon1.btnTogglePane.Checked = isVisible;
+                }
+            }
+            catch
+            {
+                // Handle edge cases where the Ribbon UI hasn't fully drawn yet
             }
         }
 
@@ -102,7 +149,7 @@ namespace SmartCrossRef
             try
             {
                 Word.Window activeWin = Sel.Parent as Word.Window ?? this.Application.ActiveWindow;
-                if (activeWin != null && taskPaneDictionary.TryGetValue(activeWin, out CustomTaskPane pane))
+                if (activeWin != null && taskPaneDictionary.TryGetValue(activeWin.Hwnd, out CustomTaskPane pane))
                 {
                     var host = pane.Control as CrossRefPaneHostControl;
                     host?.RefreshContextualData();
@@ -114,42 +161,50 @@ namespace SmartCrossRef
             }
         }
 
-        // FIX: Tracks exact window dismissal cleanly without leaking ghost elements
-        private void Application_WindowDeactivate(Word.Document Doc, Word.Window Wn)
+        private void Application_DocumentBeforeClose(Word.Document Doc, ref bool Cancel)
         {
             lock (_lockObject)
             {
-                List<Word.Window> deadWindows = new List<Word.Window>();
+                if (Doc == null) return;
 
-                // Scan for the deactivated window or any missing window hooks
-                foreach (var kvp in taskPaneDictionary)
+                List<int> handlesToRemove = new List<int>();
+
+                // 1. Find all task panes in our dictionary that belong to the closing document
+                foreach (CustomTaskPane pane in this.CustomTaskPanes)
                 {
                     try
                     {
-                        // Check if the specific window handle match occurs
-                        if (kvp.Key == Wn || kvp.Key.Caption == null)
+                        Word.Window paneWindow = pane.Window as Word.Window;
+
+                        // If the pane's window belongs to the document being closed, queue it up
+                        if (pane.Window != null && paneWindow.Document == Doc)
                         {
-                            deadWindows.Add(kvp.Key);
+                            // Find the matching handle in our dictionary
+                            var match = taskPaneDictionary.FirstOrDefault(kvp => kvp.Value == pane);
+                            if (match.Key != 0)
+                            {
+                                handlesToRemove.Add(match.Key);
+                            }
                         }
                     }
                     catch
                     {
-                        // Access failed = Window was structurally destroyed by the user
-                        deadWindows.Add(kvp.Key);
+                        // Handle transient states during teardown
                     }
                 }
 
-                foreach (var window in deadWindows)
+                // 2. Safely purge only the dead window references from our tracking dictionary
+                foreach (int hwnd in handlesToRemove)
                 {
-                    if (taskPaneDictionary.TryGetValue(window, out CustomTaskPane pane))
+                    if (taskPaneDictionary.TryGetValue(hwnd, out CustomTaskPane pane))
                     {
                         try
                         {
                             this.CustomTaskPanes.Remove(pane);
                         }
-                        catch { /* Already removed by Word internally */ }
+                        catch { /* Word may have already disposed of the structural UI */ }
 
-                        taskPaneDictionary.Remove(window);
+                        taskPaneDictionary.Remove(hwnd);
                     }
                 }
             }
